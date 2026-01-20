@@ -7,7 +7,7 @@
 import { jest } from '@jest/globals';
 
 describe('API Response Time Tests', () => {
-  const API_BASE = 'http://localhost:3000';
+  const API_BASE = 'https://kreditbee-1.onrender.com';
   const RESPONSE_TIME_LIMIT = 200; // ms
 
   // Skip if server is not running

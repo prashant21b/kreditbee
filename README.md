@@ -2,6 +2,8 @@
 
 A production-grade Node.js (Express) backend for mutual fund analytics with Redis-backed rate limiting, MySQL persistence, and precomputed analytics.
 
+🔗 **Live API**: https://kreditbee-1.onrender.com
+
 ## Features
 
 - **Rate-Limited API Client**: Redis-backed token bucket rate limiter with three independent buckets (2/sec, 50/min, 300/hr)
@@ -11,42 +13,17 @@ A production-grade Node.js (Express) backend for mutual fund analytics with Redi
 
 ## Tech Stack
 
-- **Runtime**: Node.js (JavaScript)
+- **Runtime**: Node.js (ES Modules)
 - **Framework**: Express.js
-- **Database**: MySQL (InnoDB)
-- **Cache/State**: Redis
+- **Database**: MySQL (Railway)
+- **Cache/State**: Redis (Upstash)
 - **HTTP Client**: axios
 - **Logger**: Winston (JSON logs + rotation)
 - **Scheduler**: node-cron
 
-## Quick Start
-
-### Prerequisites
-
-- Node.js >= 18
-- MySQL 8.0+
-- Redis 6.0+
-
-### Installation
-
-```bash
-# Install dependencies
-npm install
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your MySQL and Redis credentials
-
-# Run database migrations
-npm run migrate
-
-# Start the server
-npm start
-# Or for development with auto-reload
-npm run dev
-```
-
 ## API Endpoints
+
+Base URL: `https://kreditbee-1.onrender.com`
 
 ### Funds
 
@@ -54,14 +31,8 @@ npm run dev
 |--------|----------|-------------|
 | GET | `/funds` | List all funds (optional: `?category=&amc=`) |
 | GET | `/funds/:code` | Get fund metadata + latest NAV |
-| GET | `/funds/:code/analytics` | Get analytics (optional: `?window=1Y\|3Y\|5Y\|10Y`) |
+| GET | `/funds/:code/analytics?window=3Y` | Get analytics for a window |
 | GET | `/funds/rank` | Rank funds by metrics |
-
-#### Ranking Query Parameters
-- `category` (required): Category to filter by
-- `sort_by`: `median_return` (default) or `max_drawdown`
-- `window` (required): `1Y`, `3Y`, `5Y`, or `10Y`
-- `limit`: Number of results (default: 5)
 
 ### Sync
 
@@ -69,6 +40,13 @@ npm run dev
 |--------|----------|-------------|
 | POST | `/sync/trigger` | Start data ingestion (`?mode=full\|incremental`) |
 | GET | `/sync/status` | Get pipeline status and health |
+
+### Admin
+
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/admin/migrate` | Create database tables |
+| GET | `/admin/tables` | List all tables |
 
 ### Health
 
@@ -80,22 +58,22 @@ npm run dev
 
 ```bash
 # List all HDFC funds
-curl "http://localhost:3000/funds?amc=HDFC"
+curl "https://kreditbee-1.onrender.com/funds?amc=HDFC"
 
 # Get fund details
-curl http://localhost:3000/funds/119551
+curl https://kreditbee-1.onrender.com/funds/119551
 
 # Get 3-year analytics
-curl "http://localhost:3000/funds/119551/analytics?window=3Y"
+curl "https://kreditbee-1.onrender.com/funds/119551/analytics?window=3Y"
 
 # Rank Mid Cap funds by median return
-curl "http://localhost:3000/funds/rank?category=Mid%20Cap&sort_by=median_return&window=1Y&limit=5"
+curl "https://kreditbee-1.onrender.com/funds/rank?category=Mid%20Cap&sort_by=median_return&window=1Y&limit=5"
 
 # Trigger full sync
-curl -X POST http://localhost:3000/sync/trigger
+curl -X POST https://kreditbee-1.onrender.com/sync/trigger
 
 # Check sync status
-curl http://localhost:3000/sync/status
+curl https://kreditbee-1.onrender.com/sync/status
 ```
 
 ## Rate Limiting
@@ -120,7 +98,8 @@ src/
 │   └── index.js           # Configuration from env vars
 ├── routes/
 │   ├── funds.js           # Fund endpoints
-│   └── sync.js            # Sync endpoints
+│   ├── sync.js            # Sync endpoints
+│   └── admin.js           # Admin endpoints
 ├── services/
 │   ├── mfApiClient.js     # External API client
 │   ├── schemeDiscovery.js # Scheme filtering
@@ -128,11 +107,17 @@ src/
 │   ├── incrementalSyncService.js # Daily updates
 │   ├── analyticsService.js # Metrics computation
 │   └── fundService.js     # Fund CRUD operations
+├── dao/
+│   ├── fundsDao.js        # Funds table queries
+│   ├── navHistoryDao.js   # NAV history queries
+│   ├── analyticsDao.js    # Analytics queries
+│   ├── syncStateDao.js    # Sync state queries
+│   └── pipelineStatusDao.js # Pipeline queries
 ├── jobs/
 │   ├── syncJob.js         # Pipeline orchestration
 │   └── scheduler.js       # Cron scheduling
 ├── utils/
-│   ├── redis.js           # Redis connection
+│   ├── redis.js           # Redis/Upstash connection
 │   └── rateLimiter.js     # Token bucket rate limiter
 ├── db/
 │   ├── connection.js      # MySQL pool
@@ -150,6 +135,38 @@ For each fund and window (1Y, 3Y, 5Y, 10Y):
 - **Rolling Returns**: min, max, median, p25, p75
 - **Max Drawdown**: Peak-to-trough decline
 - **CAGR Distribution**: min, max, median
+
+## Local Development
+
+```bash
+# Install dependencies
+npm install
+
+# Configure environment
+cp .env.example .env
+
+# Start the server
+npm run dev
+```
+
+## Testing
+
+```bash
+# Run all tests
+npm test
+
+# Run analytics tests only
+npm run test:analytics
+```
+
+### Test Files
+
+| File | Description |
+|------|-------------|
+| `tests/analytics.test.js` | Analytics calculations (CAGR, drawdown, percentiles) |
+| `tests/rateLimiter.test.js` | Rate limiter with mocked Redis |
+| `tests/apiResponseTime.test.js` | API response time < 200ms |
+| `tests/pipelineResumability.test.js` | Pipeline crash recovery |
 
 ## License
 
