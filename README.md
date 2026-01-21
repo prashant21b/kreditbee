@@ -157,6 +157,38 @@ cp .env.example .env
 npm run dev
 ```
 
+## Docker Setup
+
+Run locally with Docker (includes MySQL and Redis):
+
+```bash
+# Build and start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f app
+
+# Run database migrations
+curl -X POST http://localhost:3000/admin/migrate
+
+# Trigger data sync
+curl -X POST http://localhost:3000/sync/trigger
+
+# Stop all services
+docker-compose down
+
+# Stop and remove volumes (clean slate)
+docker-compose down -v
+```
+
+### Services Started
+
+| Service | Port | Description |
+|---------|------|-------------|
+| **app** | 3000 | Node.js API server |
+| **mysql** | 3306 | MySQL 8.0 database |
+| **redis** | 6379 | Redis 7 for rate limiting |
+
 ## Testing
 
 ```bash
