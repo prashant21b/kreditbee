@@ -21,6 +21,14 @@ A production-grade Node.js (Express) backend for mutual fund analytics with Redi
 - **Logger**: Winston (JSON logs + rotation)
 - **Scheduler**: node-cron
 
+## Infrastructure
+
+| Service | Provider | Purpose |
+|---------|----------|---------|
+| **Database** | [Railway](https://railway.app) | MySQL hosting for funds, NAV history, and analytics data |
+| **Redis** | [Upstash](https://upstash.com) | Rate limiter state persistence (serverless Redis) |
+| **Hosting** | [Render](https://render.com) | Backend deployment and hosting |
+
 ## API Endpoints
 
 Base URL: `https://kreditbee-1.onrender.com`
